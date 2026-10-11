@@ -1,5 +1,8 @@
 import { getAccessToken } from './auth';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+// Default to a relative path: the request is served from the same origin as the
+// page (proxied to the API by Vite in dev, by the web server in production).
+// A hard-coded http://localhost:4000 would point at the visitor's own machine.
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 export type CurriculumModule = { id: string; title: string; vocabulary_scope: string; grammar_scope: string; learning_outcome: string; assessment: string };
 export type CurriculumLevel = { level: string; purpose: string; modules: CurriculumModule[] };
 export type Curriculum = { project: string; version: string; alignment: string; mastery_policy: { skill_dimensions: string[]; mastery_evidence: string[]; gate_policy: string }; levels: CurriculumLevel[] };

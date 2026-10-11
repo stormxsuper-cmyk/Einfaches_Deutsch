@@ -10,12 +10,30 @@ This is an improved MVP foundation, **not yet a complete or validated B2 course*
 - Ports 3000, 4000, 5432 available
 
 ## Run
+
+### A) Frontend only (fastest — no Docker, no database)
+1. `cd frontend`
+2. `npm install`
+3. `npm run dev`
+4. Open the printed URL (`http://localhost:3000`).
+
+The API and database are optional here: the UI renders either way and shows "API offline · demo content available" when the backend is not running. Without `frontend/.env.local` (copy `frontend/.env.example`) the app shows **Accounts are not configured** instead of the sign-in form — accounts need a Supabase project.
+
+**Demo mode:** the sign-in screen always offers *Explore in demo mode — no account needed*. It opens the full app (dashboard, curriculum, interactive reading) with no Supabase project and no backend; progress stays in that browser only and is never synced. Creating an account or signing in replaces demo mode.
+
+
+To deploy, run `npm run build` and serve the generated `frontend/dist` folder from any static host (never serve `index.html` directly: it loads `/src/main.tsx`, which a browser can only execute through Vite or a build).
+
+### B) Full stack (frontend + API + PostgreSQL)
 1. Copy `.env.example` to `.env` and set a strong local development password.
 2. From this directory run `docker compose up --build`.
 3. Open `http://localhost:3000`.
 4. API health: `http://localhost:4000/api/health`.
 5. Curriculum JSON: `http://localhost:4000/api/curriculum`.
 6. Stop with `docker compose down`. `docker compose down -v` deletes local database data.
+
+### C) Backend only (without Docker)
+`cd backend && npm install && npm run dev` (needs `DATABASE_URL`), then `npm run migrate` to apply `database/01..04`.
 
 PostgreSQL initialization scripts run only when the data volume is first created. For an existing database, apply schema changes through migrations; do not delete volumes unless you intend to delete local data.
 

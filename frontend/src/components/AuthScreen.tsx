@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { authConfigured, requestPasswordReset, setNewPassword, signIn, signUp } from '../services/auth';
+import { authConfigured, requestPasswordReset, setNewPassword, signIn, signUp, startGuest } from '../services/auth';
 import { useAuthStore } from '../store/useAuthStore';
 type Mode = 'login' | 'register' | 'forgot';
 export function AuthScreen() {
@@ -21,7 +21,9 @@ export function AuthScreen() {
     } catch (err) { setError(err instanceof Error ? err.message : 'Something went wrong.'); }
     finally { setBusy(false); }
   }
-  if (!authConfigured) return <div className="auth-wrap"><div className="card auth-card"><h2>Accounts are not configured</h2><p className="muted">Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see frontend/.env.example), then restart.</p></div></div>;
+  // Always offered: the app is usable without an account (progress then stays in this browser only).
+  const demo = <button className="textbtn" type="button" onClick={() => startGuest()}>Explore in demo mode — no account needed</button>;
+  if (!authConfigured) return <div className="auth-wrap"><div className="card auth-card"><h2>Accounts are not configured</h2><p className="muted">Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see frontend/.env.example), then restart. Accounts, sync and saved progress need them.</p>{demo}</div></div>;
   const title = recovery ? 'Choose a new password' : mode === 'login' ? 'Sign in' : mode === 'register' ? 'Create your account' : 'Reset your password';
   return <div className="auth-wrap"><form className="card auth-card" onSubmit={submit} noValidate>
     <div className="brand"><div className="flag">🇩🇪</div><div>Einfaches Deutsch<div className="muted">Zero to B2</div></div></div>
@@ -34,5 +36,6 @@ export function AuthScreen() {
       {mode !== 'login' && <button type="button" className="link" onClick={() => { setMode('login'); setError(''); }}>Back to sign in</button>}
       {mode === 'login' && <><button type="button" className="link" onClick={() => { setMode('register'); setError(''); }}>Create account</button><button type="button" className="link" onClick={() => { setMode('forgot'); setError(''); }}>Forgot password?</button></>}
     </div>}
+    {!recovery && <div className="auth-links">{demo}</div>}
   </form></div>;
 }

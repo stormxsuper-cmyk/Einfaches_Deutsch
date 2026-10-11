@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+backend/dist/
+
+# environment files (never commit secrets)
+.env
+.env.local
+.env.*.local
+!*.env.example
+
+# logs / OS
+*.log
+.DS_Store
+*.tsbuildinfo

@@ -36,3 +36,35 @@ Batch 1 (security, accounts, sync) - added and verified here:
 - Frontend: register / login / logout / password reset (Supabase Auth REST), profile panel, offline queue + sync.
 - `node scripts/test-auth.cjs` PASSES (JWT incl. alg-confusion/expiry/claims, rate limiter, sync validation, conflicts, idempotency, paging, per-user scoping).
 - NOT run here (needs PostgreSQL / internet): `npm run migrate`, `npm run test:rls`, full `tsc` build, a real Supabase sign-up. Frontend files were only syntax-checked.
+
+Batch 2 (blank-page fix + demo mode) - 2026-10-11, verified in this environment:
+Root cause of the blank page (three independent faults, all in the frontend):
+- `frontend/index.html` loads `/src/main.tsx`. Served without Vite the browser gets raw TSX
+  (verified: a plain static server returns Content-type application/octet-stream with the TSX
+  source), refuses to execute the module, and #root stays empty -> blank page.
+- `npm run build` FAILED: Dashboard.tsx uses String.replaceAll while tsconfig had
+  target/lib ES2020 -> "error TS2550 ... Try changing the 'lib' compiler option to 'es2021'".
+  Exit code 1, no dist/ produced, and frontend/Dockerfile runs `npm run build`, so
+  `docker compose up --build` could never bring the frontend up.
+- Vite's host check rejected every non-localhost host: verified HTTP 403
+  "Blocked request. This host ... is not allowed" before the fix, 200 after it.
+Also missing: the `.env.example` files that README.md and AuthScreen.tsx refer to did not exist.
+
+Fixes applied: tsconfig target/lib -> ES2022; vite.config allowedHosts + /api proxy;
+api.ts default -> relative '/api' (a hard-coded http://localhost:4000 pointed at the visitor's
+own machine); added .env.example, frontend/.env.example and .gitignore; README run instructions
+for the no-Docker path; demo (guest) mode so the app is usable without a Supabase project.
+
+Verified here:
+- frontend `npm run build`: exit 0, dist/index.html + assets emitted.
+- Vite dev server: 200 for localhost AND for a foreign Host header (was 403); /src/main.tsx is
+  served as text/javascript; /api is proxied (500 while the backend is stopped, handled by the UI).
+- Rendered the real bundle in jsdom: 9/9 checks pass - cold start shows the demo option,
+  clicking it renders the app (dashboard, curriculum, reading, demo badge), zero console errors,
+  guest flag persists across a simulated reload, and tapping a word shows its meaning.
+- Signed-in path unchanged: 6/6 sections render with the CEFR badge and no errors.
+- backend `npm run build`: exit 0; `npm test`: 3/3 suites PASS (engines + 54 modules, JWT/sync, schema contract).
+
+Still not verified here: Docker (`docker: command not found`), PostgreSQL migrations, and a real
+Supabase sign-up - so the compose stack and account sync remain unproven, as before.
+The render checks ran in jsdom, not in a real browser.
