@@ -68,3 +68,35 @@ Verified here:
 Still not verified here: Docker (`docker: command not found`), PostgreSQL migrations, and a real
 Supabase sign-up - so the compose stack and account sync remain unproven, as before.
 The render checks ran in jsdom, not in a real browser.
+
+Batch 3 (Railway deployment) - 2026-10-11, verified in this environment:
+Railpack failed with "could not determine how to build the app" because the repository root had no
+package.json; per the Railpack docs a Node app is detected only when package.json exists in the
+directory being built. The "Script start.sh not found" warning comes from a custom start command in
+the Railway service settings, not from this repository (no start.sh exists here).
+
+Changes:
+- Added a root package.json using npm workspaces (backend + frontend) with `build` and `start`
+  scripts, which is exactly what Railpack's Node provider auto-detects.
+- backend/src/server.ts now serves frontend/dist from the same origin (express.static + SPA
+  fallback that skips /api/*), so one service hosts the app and the API: no CORS and no
+  VITE_API_URL needed. Overridable with WEB_DIST.
+- The production auth guard is unchanged (still fatal) but can be opted out with
+  ALLOW_UNAUTHENTICATED=1 for a public-content deployment; account routes then return 503.
+- .env.example documents TRUST_PROXY, FRONTEND_ORIGIN, ALLOW_UNAUTHENTICATED and WEB_DIST.
+- README: Railway step-by-step (root directory must stay empty, clear custom start/build commands,
+  variables, generate domain, optional Postgres + npm run migrate) and the two-service alternative.
+
+Verified here:
+- `npm install` at the root: 233 packages hoisted, both workspaces resolved (react and express).
+- `npm run build` at the root: exit 0; backend/dist/server.js and frontend/dist/index.html emitted.
+- Production single-service run (NODE_ENV=production ALLOW_UNAUTHENTICATED=1 TRUST_PROXY=1 PORT=3000):
+  GET / -> 200 text/html, /assets/*.js -> 200 application/javascript, /api/health -> 200 with
+  levels=5 modules=54, /api/mistakes -> 401, unknown /api/* -> 404 JSON, /deep/link -> 200 (SPA
+  fallback), request with a foreign Host header -> 200.
+- Safety default unchanged: NODE_ENV=production without Supabase still exits 1 with the FATAL message.
+- The built bundle contains the demo-mode UI, uses the relative "/api", and has no hard-coded
+  localhost:4000 (grep count 0).
+
+Not verified here: an actual Railway/Railpack build (no Docker or Railway CLI in this environment)
+and PostgreSQL migrations against a real database.

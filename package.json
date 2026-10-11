@@ -1,0 +1,21 @@
+{
+  "name": "einfaches-deutsch",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Einfaches Deutsch — Zero to B2. Root workspace: builds the API and the frontend together so the whole app can run as one service.",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "build": "npm run build --workspace backend && npm run build --workspace frontend",
+    "start": "node backend/dist/server.js",
+    "dev:api": "npm run dev --workspace backend",
+    "dev:web": "npm run dev --workspace frontend",
+    "migrate": "npm run migrate --workspace backend",
+    "test": "npm run test --workspace backend"
+  }
+}

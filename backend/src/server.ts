@@ -1,4 +1,6 @@
 import express, { NextFunction, Request, RequestHandler, Response } from 'express';
+import fs from 'fs';
+import path from 'path';
 import cors from 'cors';
 import { Pool } from 'pg';
 import curriculum from './data/curriculum_master.json';
@@ -12,7 +14,11 @@ import { pullChanges, pushChanges, SyncValidationError } from './sync/sync';
 const isProd = process.env.NODE_ENV === 'production';
 const authConfig = loadAuthConfig(process.env);
 const origins = parseOrigins(process.env.FRONTEND_ORIGIN);
-if (isProd && !isAuthConfigured(authConfig)) { console.error('FATAL: set SUPABASE_JWT_SECRET or SUPABASE_URL; refusing to start without authentication.'); process.exit(1); }
+// Fail closed by default. ALLOW_UNAUTHENTICATED=1 opts into a public-content-only
+// deployment (curriculum + demo mode); every account route still returns 503.
+const publicOnly = process.env.ALLOW_UNAUTHENTICATED === '1';
+if (isProd && !isAuthConfigured(authConfig) && !publicOnly) { console.error('FATAL: set SUPABASE_JWT_SECRET or SUPABASE_URL; refusing to start without authentication.'); process.exit(1); }
+if (isProd && !isAuthConfigured(authConfig) && publicOnly) console.warn('WARNING: ALLOW_UNAUTHENTICATED=1 - starting without authentication. Account, sync and progress routes return 503; only public content is served.');
 if (isProd && origins.includes('*')) { console.error('FATAL: FRONTEND_ORIGIN must list explicit origins in production.'); process.exit(1); }
 
 const app = express();
@@ -149,6 +155,19 @@ app.post('/api/placement/answer', ...authed, json, (req, res) => {
     res.json(processPlacementAnswer({ ...state }, req.body.isCorrect));
   } catch (error) { res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid answer' }); }
 });
+
+// ---- built frontend: one service can serve the app and the API from one origin ----
+const webDist = process.env.WEB_DIST || path.join(__dirname, '..', '..', 'frontend', 'dist');
+if (fs.existsSync(path.join(webDist, 'index.html'))) {
+  app.use(express.static(webDist));
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith('/api/') || (req.method !== 'GET' && req.method !== 'HEAD')) return next();
+    res.sendFile(path.join(webDist, 'index.html')); // single-page app fallback
+  });
+  console.log(`Serving the built frontend from ${webDist}`);
+} else {
+  console.warn(`No built frontend at ${webDist} - serving the API only. Run 'npm run build' first.`);
+}
 
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
 // Never leak stack traces or database messages to clients.

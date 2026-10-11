@@ -35,6 +35,47 @@ To deploy, run `npm run build` and serve the generated `frontend/dist` folder fr
 ### C) Backend only (without Docker)
 `cd backend && npm install && npm run dev` (needs `DATABASE_URL`), then `npm run migrate` to apply `database/01..04`.
 
+## Deploy (Railway / any Node host)
+
+The repo root is an npm workspace, so **one service serves the whole app**: the API also serves the
+built frontend from the same origin, which means no CORS setup and no `VITE_API_URL` are needed.
+
+Railpack detects a Node app only if a `package.json` exists in the directory it builds. It then runs
+the `build` script and uses the `start` script as the start command — both are defined in the root
+`package.json`:
+
+```
+npm install        # installs backend + frontend (workspaces)
+npm run build      # tsc for the API, vite build for the frontend
+npm start          # node backend/dist/server.js  (serves frontend/dist + /api)
+```
+
+### Railway, step by step
+1. **New project → Deploy from GitHub repo** and pick this repository.
+2. Service **Settings**:
+   - **Root Directory**: leave it **empty / `/`** (the root `package.json` must be visible — a
+     root directory of `frontend` or `backend` is what makes Railpack fail to detect the app).
+   - **Custom Start Command / Build Command**: **clear them**. A leftover value such as `start.sh`
+     produces `⚠ Script start.sh not found`.
+   - Builder: Railpack or Nixpacks both work; Docker is not required.
+3. **Variables** (Variables tab):
+   | Variable | Value | Why |
+   |---|---|---|
+   | `ALLOW_UNAUTHENTICATED` | `1` | Without Supabase the API refuses to start in production; this opts into public content + demo mode |
+   | `TRUST_PROXY` | `1` | Railway sits behind a proxy, so rate limiting sees real client IPs |
+   | `DATABASE_URL` | *(from the Postgres plugin)* | Optional — see step 5 |
+   | `SUPABASE_URL`, `SUPABASE_JWT_SECRET` | *(from Supabase)* | Required for real accounts; replaces `ALLOW_UNAUTHENTICATED` |
+4. **Settings → Networking → Generate Domain**, then open it. `/` serves the app, `/api/health` the API.
+5. **Database (optional).** Add the Postgres plugin, reference its `DATABASE_URL`, then apply the
+   schema once: `railway run --service <api> npm run migrate` (or set a pre-deploy command
+   `npm run migrate`). Until then the app still runs: `/api/health` reports
+   `"database":"not_configured"` and the curriculum is served from JSON.
+
+### Deploying the frontend separately
+If you prefer two services, set each service's Root Directory (`/frontend`, `/backend`) and wire:
+`VITE_API_URL=https://<api-domain>/api` on the frontend (**at build time** — Vite inlines it), and
+`FRONTEND_ORIGIN=https://<frontend-domain>` on the API (the API rejects any other origin).
+
 PostgreSQL initialization scripts run only when the data volume is first created. For an existing database, apply schema changes through migrations; do not delete volumes unless you intend to delete local data.
 
 ## API
