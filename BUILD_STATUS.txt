@@ -1,0 +1,38 @@
+Build and verification report (2026-10-09)
+
+Passed:
+- Batch 1 content-schema contract checks pass: 54-module curriculum map, required level/skill dimensions, normalized content/evidence tables, and additive migration markers.
+- Added `database/CONTENT_SCHEMA_CONTRACT.md` documenting content entities, mastery invariants, security/licensing invariants, and migration order.
+- Added database/02_content_schema.sql for richer normalized content, writing/speaking, exam-section, and skill-evidence structures.
+- Added RLS coverage declarations for new user-owned evidence/submission tables; exercise answer keys have no normal-client SELECT policy.
+- Curriculum JSON parses successfully.
+- 5 stages are present: Foundation, A1, A2, B1, B2.
+- 54 curriculum modules are present and module IDs are unique.
+- TypeScript/TSX syntax transpilation check passed for 11 source files.
+- Engine/curriculum smoke tests passed: spaced-repetition interval, invalid quality rejection, planner time budget and mistake priority, placement start, curriculum count and unique IDs.
+- ZIP archive integrity checked after packaging.
+
+Not verified in this environment:
+- Full `tsc` type-check/build and Vite production build: npm dependency installation timed out, leaving React/Express/pg type packages unavailable locally.
+- Docker Compose startup: Docker is not installed in the build environment.
+- PostgreSQL SQL execution/integration tests: no PostgreSQL server is available here.
+- Supabase JWT verification and real authenticated account sync: not implemented; this is explicitly not production-ready.
+
+Still unverified for Batch 1: the SQL migration has not been executed by PostgreSQL in this environment, so syntax, FK ordering, and runtime migration behavior require the database integration test.
+
+Next manual check on a machine with Docker and internet:
+1. Copy .env.example to .env and set a local password.
+2. Run `docker compose up --build`.
+3. Check http://localhost:4000/api/health and http://localhost:4000/api/curriculum.
+4. Confirm health reports 5 levels and 54 modules and open http://localhost:3000.
+
+Update (Batch 1 follow-up):
+- Added database/03_indexes.sql (indexes on all foreign keys + review due index) and backend/scripts/migrate.cjs (`npm run migrate`, needs DATABASE_URL, applies 01..03 once each with checksums).
+- STILL NOT EXECUTED against PostgreSQL. Run `npm run migrate` on a disposable DB first.
+- Still missing: authored lesson/vocab/exercise content (seed files are tiny), real auth, tests/ folder is empty.
+
+Batch 1 (security, accounts, sync) - added and verified here:
+- backend/src/auth/jwt.ts: JWT verification; backend/src/security.ts: headers, CORS allow-list, rate limits; backend/src/sync/sync.ts + database/04_sync.sql: cross-device sync.
+- Frontend: register / login / logout / password reset (Supabase Auth REST), profile panel, offline queue + sync.
+- `node scripts/test-auth.cjs` PASSES (JWT incl. alg-confusion/expiry/claims, rate limiter, sync validation, conflicts, idempotency, paging, per-user scoping).
+- NOT run here (needs PostgreSQL / internet): `npm run migrate`, `npm run test:rls`, full `tsc` build, a real Supabase sign-up. Frontend files were only syntax-checked.

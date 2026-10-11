@@ -1,0 +1,52 @@
+{
+  "level": "Foundation",
+  "alphabet": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "Ä",
+    "Ö",
+    "Ü",
+    "ß"
+  ],
+  "phonetics": [
+    {
+      "combo": "sch",
+      "sound": "sh sound, like “shoe”",
+      "example": "Schule"
+    },
+    {
+      "combo": "ch",
+      "sound": "soft or hard throat sound depending on the word",
+      "example": "ich / Buch"
+    },
+    {
+      "combo": "eu / äu",
+      "sound": "similar to “oy”",
+      "example": "Euro / Bäume"
+    }
+  ]
+}

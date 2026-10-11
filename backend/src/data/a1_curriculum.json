@@ -1,0 +1,26 @@
+{
+  "level": "A1",
+  "modules": [
+    {
+      "id": "m1",
+      "title": "Mich vorstellen & Zahlen",
+      "topics": [
+        "Numbers",
+        "Days",
+        "Months",
+        "Personal pronouns",
+        "sein / haben"
+      ]
+    },
+    {
+      "id": "m2",
+      "title": "Familie & Alltag",
+      "topics": [
+        "Family members",
+        "Akkusativ basics",
+        "W-questions",
+        "Negation"
+      ]
+    }
+  ]
+}

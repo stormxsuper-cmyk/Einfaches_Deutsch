@@ -1,0 +1,29 @@
+{
+  "name": "einfaches-deutsch-backend",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "test": "node scripts/test-engines.cjs && node scripts/test-auth.cjs && node scripts/validate-content-schema.cjs",
+    "migrate": "node scripts/migrate.cjs",
+    "test:schema": "node scripts/validate-content-schema.cjs",
+    "test:rls": "node scripts/test-rls.cjs",
+    "dev:token": "node scripts/mint-dev-token.cjs"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.7",
+    "@types/pg": "^8.11.10",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.2"
+  }
+}

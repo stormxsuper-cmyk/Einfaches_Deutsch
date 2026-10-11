@@ -1,0 +1,13 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { getCurriculum, type Curriculum, type CurriculumLevel, type CurriculumModule } from '../services/api';
+const levelColors: Record<string,string> = { Foundation:'#377b75', A1:'#2581ba', A2:'#b58b21', B1:'#4969bb', B2:'#b94d51' };
+export function CurriculumExplorer(){
+ const [data,setData]=useState<Curriculum|null>(null); const [selected,setSelected]=useState('Foundation'); const [query,setQuery]=useState(''); const [error,setError]=useState('');
+ useEffect(()=>{getCurriculum().then(setData).catch(e=>setError(e instanceof Error?e.message:'Could not load curriculum'));},[]);
+ const level = data?.levels.find((x:CurriculumLevel)=>x.level===selected);
+ const modules = useMemo(()=> (level?.modules||[]).filter((m:CurriculumModule)=>`${m.id} ${m.title} ${m.vocabulary_scope} ${m.grammar_scope}`.toLowerCase().includes(query.toLowerCase())),[level,query]);
+ return <section className="card curriculum-card"><div className="section-head"><div><h2>Curriculum roadmap</h2><div className="muted">Foundation → A1 → A2 → B1 → B2 · {data?.version||'loading'}</div></div><span className="pill">{data?.levels.reduce((n,l)=>n+l.modules.length,0)||'—'} units</span></div>
+ <div className="level-tabs">{(data?.levels||[]).map(l=><button key={l.level} className={`level-tab ${selected===l.level?'active':''}`} style={{'--level-color':levelColors[l.level]} as React.CSSProperties} onClick={()=>setSelected(l.level)}>{l.level}<small>{l.modules.length} units</small></button>)}</div>
+ {error&&<p className="error">{error}</p>}{level&&<><p className="level-purpose">{level.purpose}</p><input className="search-input" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search units, vocabulary, or grammar…" aria-label="Search curriculum"/><div className="module-list">{modules.map((m,i)=><details className="module" key={m.id}><summary><span className="module-code" style={{background:levelColors[selected]}}>{m.id}</span><span className="module-title">{m.title}</span><span className="module-count">{String(i+1).padStart(2,'0')}</span></summary><div className="module-content"><h4>Vocabulary & topics</h4><p>{m.vocabulary_scope}</p><h4>Grammar & structures</h4><p>{m.grammar_scope}</p><h4>Learning outcome</h4><p>{m.learning_outcome}</p><h4>Assessment</h4><p>{m.assessment}</p></div></details>)}{modules.length===0&&<p className="muted">No units match your search.</p>}</div></>}
+ <p className="notice">CEFR-informed learning plan. Foundation is a pre-A1 stage, and completion does not certify a CEFR or Goethe level.</p></section>
+}
